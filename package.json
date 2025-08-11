@@ -1,0 +1,12 @@
+{
+  "name": "cryptomaltese.com",
+  "version": "1.0.0",
+  "description": "A blockchain forensics platform for incident submission, report generation, and fund flow mapping",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["blockchain", "forensics", "cryptocurrency", "fund-tracking"],
+  "author": "Pyzeur-ColonyLab",
+  "license": "MIT"
+}
