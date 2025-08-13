@@ -1,0 +1,383 @@
+.container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    margin: 20px 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
+}
+
+.statsButton, .clearButton {
+    padding: 8px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    color: #374151;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.statsButton:hover, .clearButton:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.clearButton {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.clearButton:hover {
+    background: #fecaca;
+    border-color: #f87171;
+}
+
+.cacheStats {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.cacheStats h3 {
+    margin: 0 0 16px 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.statItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+}
+
+.statLabel {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.statValue {
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.classificationsList h3 {
+    margin: 0 0 20px 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.loading, .emptyState {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.classificationsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.classificationCard {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.classificationCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.cardHeader {
+    background: #f8fafc;
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.addressInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.address {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+}
+
+.classificationType {
+    background: #3b82f6;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.confidenceIndicator {
+    position: relative;
+    height: 24px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.confidenceBar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.confidenceText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.cardBody {
+    padding: 16px;
+}
+
+.riskLevel {
+    margin-bottom: 12px;
+}
+
+.riskBadge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.reasoning {
+    margin-bottom: 12px;
+    color: #374151;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.indicators {
+    margin-bottom: 16px;
+}
+
+.indicators strong {
+    color: #1f2937;
+    font-size: 0.875rem;
+}
+
+.indicators ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+}
+
+.indicators li {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+}
+
+.metadata {
+    display: flex;
+    justify-content: space-between;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.cardActions {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.viewButton, .invalidateButton {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    color: #374151;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.viewButton:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.invalidateButton {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.invalidateButton:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: #1f2937;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.closeButton:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.modalBody {
+    padding: 20px;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.modalBody p {
+    margin: 0 0 12px 0;
+}
+
+.modalBody p:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+        margin: 16px 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .headerActions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .classificationsGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .addressInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .metadata {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .cardActions {
+        flex-direction: column;
+    }
+} 

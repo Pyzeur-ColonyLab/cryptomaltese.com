@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/db/client';
 import { enhancedFlowAnalysis, EnhancedFlowAnalysis } from '@/services/enhanced-fund-tracker';
+import { FundFlowTracker } from '@/services/fund-flow/tracker';
+import { PatternDetector } from '@/services/fund-flow/pattern-detector';
+import { AddressClassifier } from '@/services/fund-flow/address-classifier';
+import { PathAnalyzer } from '@/services/fund-flow/path-analyzer';
+import { getEvmTransactions, getEvmTransactionDetails } from '@/services/etherscan';
 
 const CHAIN_IDS: Record<string, number> = {
   ethereum: 1,
@@ -37,6 +42,10 @@ function getMainLoss(txData: any, victim: string) {
 
 export async function POST(request: NextRequest, context: any) {
   const { id } = await Promise.resolve(context.params);
+  const body = await request.json();
+  
+  console.log('🔍 Enhanced mapping API received:', { id, body });
+  
   try {
     // Clean and validate the incident ID
     const cleanId = id.trim();
@@ -104,13 +113,163 @@ export async function POST(request: NextRequest, context: any) {
         timeStamp: mainLossTx.timeStamp
       } : null
     });
-    const enhancedAnalysis: EnhancedFlowAnalysis = await enhancedFlowAnalysis(
-      incident.wallet_address,
-      incident.chain,
-      6, // maxDepth
-      startblock,
-      mainLossTx
-    );
+
+    // 🔄 NEW: Run enhanced fund flow analysis
+    let enhancedAnalysis: EnhancedFlowAnalysis;
+    try {
+      console.log('🔍 Running enhanced fund flow analysis...');
+      
+      // Create a mock Etherscan service for the new tracker
+      const mockEtherscanService = {
+        async getTransactions(address: string, timestamp: Date) {
+          const chainId = CHAIN_IDS[incident.chain] || 1;
+          return await getEvmTransactions(address, chainId);
+        },
+        async getOutgoingTransactions(address: string, minBlockNumber: number = 0) {
+          const chainId = CHAIN_IDS[incident.chain] || 1;
+          const allTxs = await getEvmTransactions(address, chainId);
+          
+          // Filter by both hack block number AND progressive block filtering
+          return allTxs.filter((tx: any) => {
+            // Must be outgoing transaction
+            if (tx.from?.toLowerCase() !== address.toLowerCase()) return false;
+            
+            // Must have block number
+            if (!tx.blockNumber) return false;
+            
+            // Must be after the hack block number
+            if (parseInt(incident.block_number || '0') > 0) {
+              const hackBlock = parseInt(incident.block_number);
+              const txBlock = parseInt(tx.blockNumber, 16);
+              if (txBlock <= hackBlock) return false;
+            }
+            
+            // Must be after the progressive block threshold
+            if (minBlockNumber > 0) {
+              const txBlock = parseInt(tx.blockNumber, 16);
+              if (txBlock <= minBlockNumber) return false;
+            }
+            
+            return true;
+          });
+        },
+        async getTransactionByHash(hash: string) {
+          // Since we already have the transaction details in mainLossTx, return them directly
+          if (mainLossTx && mainLossTx.hash === hash) {
+            return {
+              hash: mainLossTx.hash,
+              from: mainLossTx.from,
+              to: mainLossTx.to,
+              value: mainLossTx.value,
+              timeStamp: mainLossTx.timeStamp,
+              blockNumber: mainLossTx.blockNumber
+            };
+          }
+          
+          // Fallback: try to get from Etherscan (but this might not work due to API structure)
+          try {
+            const chainId = CHAIN_IDS[incident.chain] || 1;
+            return await getEvmTransactionDetails(hash, chainId);
+          } catch (error) {
+            console.log(`❌ Error fetching transaction details for ${hash}:`, error);
+            return null;
+          }
+        }
+      };
+
+      const tracker = new FundFlowTracker(
+        mockEtherscanService,
+        new PatternDetector(),
+        new AddressClassifier(),
+        new PathAnalyzer()
+      );
+
+      // Run fund flow analysis with new algorithm
+      const trackerConfig = { 
+        maxDepth: 6, 
+        highVolumeThreshold: 1000, // Mark nodes with >1000 tx as potential endpoints
+        enableAIClassification: false // Disabled for now
+      };
+      
+      console.log('🔍 Tracker configuration:', trackerConfig);
+      console.log('🔍 High activity threshold: 1000 transactions');
+      
+      // Get the hack transaction hash from mainLossTx
+      const hackTransactionHash = mainLossTx?.hash;
+      if (!hackTransactionHash) {
+        throw new Error('No hack transaction hash found in mainLossTx');
+      }
+      
+      console.log(`🔍 Using hack transaction hash: ${hackTransactionHash}`);
+      
+      const fundFlowAnalysis = await tracker.analyzeIncident(
+        cleanId,
+        incident.wallet_address,
+        mainLoss.value?.toString() || '0',
+        new Date(incident.discovered_at),
+        hackTransactionHash,
+        trackerConfig
+      );
+
+      console.log('✅ Fund flow analysis completed:', fundFlowAnalysis);
+      
+      // Identify potential endpoints from the paths
+      const potentialEndpoints = fundFlowAnalysis.paths
+        .filter(p => p.patterns?.isPotentialEndpoint)
+        .map(p => ({
+          address: p.fromAddress,
+          type: 'potential_endpoint',
+          confidence: p.confidenceScore || 0,
+          reasoning: [`High activity: ${p.patterns.transactionCount} transactions`],
+          incoming_value: 0,
+          incoming_transaction: 'ENDPOINT_MARKER'
+        }));
+
+      console.log('🔍 Potential endpoints identified:', potentialEndpoints);
+
+      // Convert fund flow analysis to enhanced format
+      enhancedAnalysis = {
+        flow_analysis: {
+          total_depth_reached: fundFlowAnalysis.paths.length > 0 ? Math.max(...fundFlowAnalysis.paths.map(p => p.depthLevel)) : 0,
+          total_addresses_analyzed: new Set(fundFlowAnalysis.paths.flatMap(p => [p.fromAddress, p.toAddress])).size,
+          total_value_traced: fundFlowAnalysis.paths.reduce((sum, p) => sum + (p.valueAmount || 0), 0).toString(),
+          high_confidence_paths: fundFlowAnalysis.paths.filter(p => (p.confidenceScore || 0) > 0.7).length,
+          cross_chain_exits: 0,
+          endpoints_detected: fundFlowAnalysis.paths.filter(p => p.patterns?.isPotentialEndpoint).length,
+          endpoint_types: fundFlowAnalysis.paths
+            .filter(p => p.patterns?.isPotentialEndpoint)
+            .map(p => 'potential_endpoint')
+        },
+        risk_assessment: {
+          high_risk_addresses: []
+        },
+        forensic_evidence: {
+          chain_of_custody: fundFlowAnalysis.paths.map(p => ({
+            source: p.fromAddress,
+            target: p.toAddress,
+            value: p.valueAmount?.toString() || '0',
+            confidence_score: p.confidenceScore || 0,
+            reasoning_flags: ['Enhanced fund flow analysis']
+          })),
+          confidence_scores: fundFlowAnalysis.paths.map(p => p.confidenceScore || 0),
+          pattern_matches: [],
+          cross_references: []
+        },
+        endpoints: potentialEndpoints
+      };
+
+    } catch (claudeError) {
+      console.log('⚠️ Claude analysis failed, falling back to enhanced tracker:', claudeError);
+      
+      // Fallback to original enhanced tracker
+      enhancedAnalysis = await enhancedFlowAnalysis(
+        incident.wallet_address,
+        incident.chain,
+        6, // maxDepth
+        startblock,
+        mainLossTx
+      );
+    }
     
     console.log('Enhanced analysis result:', {
       total_depth_reached: enhancedAnalysis.flow_analysis.total_depth_reached,

@@ -6,7 +6,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["blockchain", "forensics", "cryptocurrency", "fund-tracking"],
+  "keywords": [
+    "blockchain",
+    "forensics",
+    "cryptocurrency",
+    "fund-tracking"
+  ],
   "author": "Pyzeur-ColonyLab",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1"
+  }
 }

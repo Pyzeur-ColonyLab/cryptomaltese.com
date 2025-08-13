@@ -1,0 +1,362 @@
+.container {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.header h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.riskScore {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.scoreValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.riskLevel {
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summary {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    border-left: 4px solid #3b82f6;
+}
+
+.summary h3 {
+    margin: 0 0 12px 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+}
+
+.summary p {
+    margin: 0;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.patternsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.patternCard {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.patternCard:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.patternHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.patternIcon {
+    font-size: 1.5rem;
+}
+
+.patternHeader h4 {
+    margin: 0;
+    flex: 1;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.confidence {
+    padding: 4px 8px;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.description {
+    color: #4b5563;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.indicators {
+    margin-bottom: 16px;
+}
+
+.indicators strong {
+    color: #1f2937;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.indicators ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.indicators li {
+    color: #6b7280;
+    margin-bottom: 4px;
+    font-size: 0.875rem;
+}
+
+.details {
+    margin-bottom: 16px;
+}
+
+.details strong {
+    color: #1f2937;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.details pre {
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: #475569;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.affectedAddresses {
+    margin-bottom: 0;
+}
+
+.affectedAddresses strong {
+    color: #1f2937;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.addressList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.address {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.moreAddresses {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.recommendations {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.recommendations h3 {
+    margin: 0 0 16px 0;
+    color: #92400e;
+    font-size: 1.125rem;
+}
+
+.recommendations ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.recommendation {
+    color: #92400e;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.recommendation:last-child {
+    margin-bottom: 0;
+}
+
+/* Start container styles */
+.startContainer {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+}
+
+.startContainer h3 {
+    margin: 0 0 12px 0;
+    color: #1f2937;
+    font-size: 1.25rem;
+}
+
+.startContainer p {
+    margin: 0 0 24px 0;
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.startButton {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.startButton:hover {
+    background: #2563eb;
+}
+
+/* Loading container styles */
+.loadingContainer {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loadingContainer p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Error container styles */
+.errorContainer {
+    text-align: center;
+    padding: 40px 20px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+}
+
+.errorIcon {
+    font-size: 2rem;
+    margin-bottom: 16px;
+}
+
+.errorContainer h3 {
+    margin: 0 0 12px 0;
+    color: #dc2626;
+    font-size: 1.25rem;
+}
+
+.errorContainer p {
+    margin: 0 0 24px 0;
+    color: #7f1d1d;
+    line-height: 1.6;
+}
+
+.retryButton {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+    background: #b91c1c;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+        margin: 16px 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .patternsGrid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .patternCard {
+        padding: 16px;
+    }
+    
+    .patternHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .addressList {
+        flex-direction: column;
+        gap: 6px;
+    }
+} 

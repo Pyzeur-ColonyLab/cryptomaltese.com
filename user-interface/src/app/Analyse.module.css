@@ -480,4 +480,161 @@
   .dataTable td {
     padding: 0.5rem;
   }
+}
+
+/* AI Toggle Styles */
+.aiToggleContainer {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.aiToggleContainer:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.aiToggleHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.aiToggleIcon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  flex-shrink: 0;
+}
+
+.aiToggleContent {
+  flex: 1;
+}
+
+.aiToggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.aiToggleInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.aiToggleSwitch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.aiToggleSwitchActive {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.aiToggleSlider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.aiToggleSwitchActive .aiToggleSlider {
+  transform: translateX(24px);
+}
+
+.aiToggleText {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.aiToggleDescription {
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-left: 3.5rem;
+}
+
+.aiToggleStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.aiToggleStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.aiToggleStatusDotActive {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.aiToggleStatusText {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.aiToggleDebug {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  text-align: center;
+  font-family: monospace;
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .aiToggleContainer {
+    padding: 1rem;
+  }
+
+  .aiToggleHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .aiToggleDescription {
+    margin-left: 0;
+    text-align: center;
+  }
 } 

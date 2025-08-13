@@ -16,9 +16,9 @@ Welcome to the Crypto-Sentinel documentation. This directory contains comprehens
 - **[API Contracts](design/api-contracts.md)** - Detailed API endpoint specifications
 
 ### 🔧 Implementation
-- **[Fund Tracker Enhancement Specification](fund_tracker_enhancement_spec.md)** - Core algorithm specification
-- **[Fund Flow Tracking Fixes](fund-flow-tracking-fixes.md)** - Critical fixes and optimizations
-- **[Fund Flow Mapping Diagram](fund-flow-mapping-diagram.md)** - Sankey diagram implementation guide
+- **[Fund Flow Tracking Implementation](fund-flow-tracking-implementation.md)** - Current implementation status and features
+- **[Enhanced Fund Flow Algorithm](enhanced-fund-flow-algorithm.md)** - Core algorithm specification and implementation
+- **[Fund Flow Mapping Visualization](fund-flow-mapping-visualization.md)** - Sankey diagram implementation guide
 
 ### 🚀 Deployment & Operations
 - **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
@@ -33,7 +33,7 @@ Welcome to the Crypto-Sentinel documentation. This directory contains comprehens
 
 ### For Developers
 1. Review **[Architecture Design](architecture-design.md)** for system structure
-2. Study **[Fund Tracker Enhancement Specification](fund_tracker_enhancement_spec.md)** for algorithm details
+2. Study **[Enhanced Fund Flow Algorithm](enhanced-fund-flow-algorithm.md)** for algorithm details
 3. Reference **[API Documentation](API_DOCUMENTATION.md)** for integration
 
 ### For System Administrators
@@ -44,18 +44,18 @@ Welcome to the Crypto-Sentinel documentation. This directory contains comprehens
 ## 🔍 Key Features Documentation
 
 ### Enhanced Fund Flow Tracking
-- **Algorithm**: See [Fund Tracker Enhancement Specification](fund_tracker_enhancement_spec.md)
-- **Optimizations**: See [Fund Flow Tracking Fixes](fund-flow-tracking-fixes.md)
+- **Algorithm**: See [Enhanced Fund Flow Algorithm](enhanced-fund-flow-algorithm.md)
+- **Implementation**: See [Fund Flow Tracking Implementation](fund-flow-tracking-implementation.md)
 - **API Integration**: See [API Documentation](API_DOCUMENTATION.md)
 
 ### Visualization
-- **Sankey Diagram**: See [Fund Flow Mapping Diagram](fund-flow-mapping-diagram.md)
-- **Interactive Features**: See [Fund Flow Mapping Diagram](fund-flow-mapping-diagram.md)
+- **Sankey Diagram**: See [Fund Flow Mapping Visualization](fund-flow-mapping-visualization.md)
+- **Interactive Features**: See [Fund Flow Mapping Visualization](fund-flow-mapping-visualization.md)
 
 ### Analysis Management
 - **Storage**: See [API Documentation](API_DOCUMENTATION.md#analysis-management)
 - **History**: See [API Documentation](API_DOCUMENTATION.md#list-analyses)
-- **Deterministic Results**: See [Fund Flow Tracking Fixes](fund-flow-tracking-fixes.md)
+- **Deterministic Results**: See [Enhanced Fund Flow Algorithm](enhanced-fund-flow-algorithm.md)
 
 ## 🛠️ Development Resources
 
@@ -69,6 +69,7 @@ Crypto-Sentinel/
 ├── services/               # Backend services
 │   ├── bitcoin.ts         # Bitcoin API integration
 │   ├── etherscan.ts       # Etherscan API integration
+│   ├── enhanced-fund-tracker.ts # Enhanced fund flow algorithm
 │   └── types/             # TypeScript type definitions
 ├── db/                    # Database models and migrations
 └── docs/                  # This documentation directory
@@ -97,6 +98,6 @@ This documentation is maintained alongside the codebase. When making changes:
 
 ---
 
-**Last Updated**: August 2025  
+**Last Updated**: January 2025  
 **Version**: 1.0.0  
-**Status**: Production Ready 
+**Status**: Production Ready - Enhanced Fund Flow Tracking Implemented 

@@ -2,6 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import styles from './Analyse.module.css';
 import { ResponsiveSankey } from '@nivo/sankey';
+import PatternAnalysis from './components/PatternAnalysis';
+import ClassificationConfidence from './components/ClassificationConfidence';
 
 // Professional color scheme matching user's request
 const COLOR_SCHEME = {
@@ -72,6 +74,7 @@ export default function Analyse() {
   const [existingAnalyses, setExistingAnalyses] = useState<any[]>([]);
   const [hasCheckedExisting, setHasCheckedExisting] = useState(false);
   const [showExistingAnalyses, setShowExistingAnalyses] = useState(false);
+  // AI Analysis temporarily disabled - will be developed separately
 
 
 
@@ -142,11 +145,14 @@ export default function Analyse() {
     try {
       
       // Call the enhanced mapping endpoint
+      console.log('🔍 Running enhanced fund flow analysis...');
+      
       const res = await fetch(`/api/incident/${incidentId}/enhanced-mapping`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({}) // No parameters needed for now
       });
       
       clearTimeout(timeoutId);
@@ -532,6 +538,29 @@ export default function Analyse() {
         >
           {loading ? 'Running Analysis...' : hasCheckedExisting ? 'Run New Analysis' : 'Start'}
         </button>
+        
+        {/* Enhanced Fund Flow Algorithm Status */}
+        <div className={styles.aiToggleContainer}>
+          <div className={styles.aiToggleHeader}>
+            <div className={styles.aiToggleIcon}>
+              🔍
+            </div>
+            <div className={styles.aiToggleContent}>
+              <div className={styles.aiToggleText}>
+                Enhanced Fund Flow Algorithm
+              </div>
+              <div className={styles.aiToggleDescription}>
+                Automatically detects high-activity nodes (&gt;1000 tx) as potential endpoints
+              </div>
+            </div>
+          </div>
+          <div className={styles.aiToggleStatus}>
+            <div className={`${styles.aiToggleStatusDot} ${styles.aiToggleStatusDotActive}`} />
+            <span className={styles.aiToggleStatusText}>
+              Active
+            </span>
+          </div>
+        </div>
         
         {error && (
           <div className={styles.errorMessage}>
@@ -962,6 +991,21 @@ export default function Analyse() {
                   </>
                 );
               })()}
+            </div>
+          )}
+
+          {/* Pattern Analysis Section */}
+          {analysisData && analysisId && (
+            <div className={styles.resultsCard}>
+              <h3>Advanced Pattern Detection</h3>
+              <PatternAnalysis 
+                analysisId={analysisId} 
+                onAnalysisComplete={(analysis) => {
+                  console.log('Pattern analysis completed:', analysis);
+                }}
+              />
+              
+              <ClassificationConfidence />
             </div>
           )}
 

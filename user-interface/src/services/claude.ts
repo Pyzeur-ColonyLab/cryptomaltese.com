@@ -4,11 +4,18 @@ export async function analyzeIncidentWithClaude(prompt: string): Promise<{ summa
   const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
   const API_KEY = process.env.CLAUDE_API_KEY;
   
+  console.log('🔑 Claude API Key check:', API_KEY ? '✅ Configured' : '❌ Missing');
+  console.log('🌐 Claude API URL:', CLAUDE_API_URL);
+  
   if (!API_KEY) {
     throw new Error('Claude API key not configured');
   }
   
   try {
+    console.log('🚀 Making Claude API request...');
+    console.log('📝 Prompt length:', prompt.length);
+    console.log('🔑 Using API key:', API_KEY.substring(0, 8) + '...');
+    
     const res = await axios.post(
       CLAUDE_API_URL,
       {

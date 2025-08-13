@@ -3,6 +3,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
 
 # Next.js
 .next/
@@ -117,3 +119,12 @@ temp/
 
 # macOS metadata files
 ._* 
+
+# Test files
+test-*.js
+test-*.ts
+test-*.mjs
+
+# Development files
+*.dev.js
+*.dev.ts 
