@@ -278,95 +278,130 @@ export async function POST(request: NextRequest, context: any) {
       chain_of_custody_length: enhancedAnalysis.forensic_evidence.chain_of_custody.length
     });
     
-    // Convert enhanced analysis to graph format for visualization
-    const nodes: any[] = [];
-    const links: any[] = [];
-    const nodeMap = new Map<string, number>();
-    
-    // Process chain of custody to build graph
-    enhancedAnalysis.forensic_evidence.chain_of_custody.forEach((link: any, index: number) => {
-      // Get source and target addresses from the link
-      const sourceAddress = link.source;
-      const targetAddress = link.target;
+          // Convert enhanced analysis to detailed_transactions format for frontend
+      const detailedTransactions: any[] = [];
       
-      // Add source node if not exists
-      if (!nodeMap.has(sourceAddress)) {
-        const sourceIdx = nodes.length;
-        nodeMap.set(sourceAddress, sourceIdx);
-        nodes.push({ 
-          name: sourceAddress,
-          risk_score: 0,
-          confidence_score: 0
-        });
-      }
-      
-      // Add target node if not exists
-      if (!nodeMap.has(targetAddress)) {
-        const targetIdx = nodes.length;
-        nodeMap.set(targetAddress, targetIdx);
-        nodes.push({ 
-          name: targetAddress,
-          risk_score: 0,
-          confidence_score: 0
-        });
-      }
-      
-      // Add link
-      const sourceIdx = nodeMap.get(sourceAddress);
-      const targetIdx = nodeMap.get(targetAddress);
-      
-      if (sourceIdx !== undefined && targetIdx !== undefined) {
-        links.push({
-          source: sourceIdx,
-          target: targetIdx,
-          value: link.value,
-          confidence_score: link.confidence_score,
-          reasoning_flags: link.reasoning_flags || []
-        });
-      }
-    });
-    
-    // Add unique keys
-    const keyedNodes = nodes.map((node, idx) => ({ ...node, key: node.name || idx }));
-    const keyedLinks = links.map((link, idx) => ({ ...link, key: `${link.source}-${link.target}-${link.value}-${idx}` }));
-    
-    // Generate detailed transactions for the report
-    console.log('Generating detailed transactions...');
-    const detailedTransactions = [];
-    
-    // Add the original incident transaction first
-    if (txData.info) {
-      detailedTransactions.push({
-        type: 'eth',
-        hash: txData.info.hash,
-        from: txData.info.from,
-        to: txData.info.to,
-        value: txData.info.valueEth,
-        blockNumber: txData.info.blockNumber,
-        timestamp: txData.info.timeStamp,
-        gasUsed: txData.info.gasUsed,
-        gasPrice: txData.info.gasPrice,
-        description: 'Original hack transaction'
-      });
-    }
-    
-    // Add ERC-20 transactions from original incident
-    if (txData.erc20Transfers && Array.isArray(txData.erc20Transfers)) {
-      txData.erc20Transfers.forEach((transfer: any) => {
+      // Add the original ETH transaction
+      if (mainLossTx) {
+        // Convert value from wei to ETH if needed
+        let value = mainLossTx.valueEth || 0;
+        if (!value && mainLossTx.value) {
+          // If valueEth is not available, convert from wei
+          value = parseFloat(mainLossTx.value) / 1e18;
+        }
+        
         detailedTransactions.push({
-          type: 'erc20',
-          hash: transfer.hash,
-          from: transfer.from,
-          to: transfer.to,
-          tokenSymbol: transfer.tokenSymbol,
-          tokenName: transfer.tokenName,
-          value: transfer.valueDecimal,
-          blockNumber: transfer.blockNumber,
-          timestamp: transfer.timeStamp,
-          description: 'Original ERC-20 transfer'
+          type: 'eth',
+          from: mainLossTx.from,
+          to: mainLossTx.to,
+          value: value,
+          hash: mainLossTx.hash,
+          blockNumber: mainLossTx.blockNumber,
+          timestamp: mainLossTx.timeStamp,
+          description: 'Initial hack transaction'
         });
+      }
+      
+              // Process chain of custody to build tracked transactions
+        enhancedAnalysis.forensic_evidence.chain_of_custody.forEach((link: any, index: number) => {
+          // Add tracked transaction - value should already be in ETH from PathAnalyzer
+          detailedTransactions.push({
+            type: 'tracked',
+            from: link.source,
+            to: link.target,
+            value: parseFloat(link.value) || 0, // Value is in ETH
+            hash: `tracked_${index}`,
+            depth: Math.floor(index / 2), // Approximate depth
+            description: link.reasoning_flags?.[0] || 'Fund flow tracking',
+            confidence: link.confidence_score || 0.5
+          });
+        });
+      
+      // Add endpoint transactions
+      if (enhancedAnalysis.endpoints && enhancedAnalysis.endpoints.length > 0) {
+        enhancedAnalysis.endpoints.forEach((endpoint: any, index: number) => {
+          detailedTransactions.push({
+            type: 'endpoint',
+            to: endpoint.address,
+            value: endpoint.incoming_value || 0,
+            endpointType: endpoint.type,
+            confidence: endpoint.confidence,
+            description: `Endpoint: ${endpoint.reasoning?.[0] || 'High activity detected'}`
+          });
+        });
+      }
+      
+      console.log('🔍 Detailed transactions generated:', detailedTransactions.length);
+      console.log('🔍 Sample detailed transaction:', detailedTransactions[0]);
+      console.log('🔍 Total value in detailed transactions:', detailedTransactions.reduce((sum, tx) => sum + (tx.value || 0), 0));
+      
+      // Convert to graph format for visualization
+      const nodes: any[] = [];
+      const links: any[] = [];
+      const nodeMap = new Map<string, number>();
+      
+      // Process detailed transactions to build graph
+      detailedTransactions.forEach((tx: any, index: number) => {
+        if (tx.type === 'tracked') {
+          // Add source node if not exists
+          if (!nodeMap.has(tx.from)) {
+            const sourceIdx = nodes.length;
+            nodeMap.set(tx.from, sourceIdx);
+            nodes.push({ 
+              name: tx.from,
+              risk_score: 0,
+              confidence_score: tx.confidence || 0
+            });
+          }
+          
+          // Add target node if not exists
+          if (!nodeMap.has(tx.to)) {
+            const targetIdx = nodes.length;
+            nodeMap.set(tx.to, targetIdx);
+            nodes.push({ 
+              name: tx.to,
+              risk_score: 0,
+              confidence_score: tx.confidence || 0
+            });
+          }
+          
+          // Add link
+          const sourceIdx = nodeMap.get(tx.from);
+          const targetIdx = nodeMap.get(tx.to);
+          
+          if (sourceIdx !== undefined && targetIdx !== undefined) {
+            links.push({
+              source: sourceIdx,
+              target: targetIdx,
+              value: tx.value,
+              confidence_score: tx.confidence || 0,
+              reasoning_flags: [tx.description || 'Fund flow tracking']
+            });
+          }
+        }
       });
-    }
+      
+      // Add unique keys
+      const keyedNodes = nodes.map((node, idx) => ({ ...node, key: node.name || idx }));
+      const keyedLinks = links.map((link, idx) => ({ ...link, key: `${link.source}-${link.target}-${link.value}-${idx}` }));
+      
+      // Add ERC-20 transfers from original incident
+      if (txData.erc20 && Array.isArray(txData.erc20)) {
+        txData.erc20.forEach((transfer: any) => {
+          detailedTransactions.push({
+            type: 'erc20',
+            hash: transfer.hash,
+            from: transfer.from,
+            to: transfer.to,
+            tokenSymbol: transfer.tokenSymbol,
+            tokenName: transfer.tokenName,
+            value: transfer.valueDecimal,
+            blockNumber: transfer.blockNumber,
+            timestamp: transfer.timeStamp,
+            description: 'Original ERC-20 transfer'
+          });
+        });
+      }
     
     // Add internal transactions from original incident
     if (txData.internal && Array.isArray(txData.internal)) {
@@ -451,6 +486,12 @@ export async function POST(request: NextRequest, context: any) {
     };
     
     console.log('Enhanced mapping generation completed successfully');
+    console.log('🔍 Final response structure:', {
+      nodes_count: response.nodes.length,
+      links_count: response.links.length,
+      detailed_transactions_count: response.detailedTransactions.length,
+      total_value_traced: response.enhanced_analysis.flow_analysis.total_value_traced
+    });
     
     // Store the analysis data for future retrieval
     try {

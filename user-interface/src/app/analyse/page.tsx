@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 import styles from './Analyse.module.css';
-import { ResponsiveSankey } from '@nivo/sankey';
+import SafeSankey from './components/SafeSankey';
 import PatternAnalysis from './components/PatternAnalysis';
 import ClassificationConfidence from './components/ClassificationConfidence';
 
@@ -71,7 +71,7 @@ export default function Analyse() {
   const [error, setError] = useState('');
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
-  const [existingAnalyses, setExistingAnalyses] = useState<any[]>([]);
+  const [existingAnalyses, setExistingAnalyses] = useState<AnalysisData[]>([]);
   const [hasCheckedExisting, setHasCheckedExisting] = useState(false);
   const [showExistingAnalyses, setShowExistingAnalyses] = useState(false);
   // AI Analysis temporarily disabled - will be developed separately
@@ -136,37 +136,67 @@ export default function Analyse() {
   }
 
   async function runNewAnalysis(incidentId: string) {
-    // Set a timeout for the entire operation
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      setError('Analysis timed out after 3 minutes. Please try again.');
-    }, 180000); // 3 minutes
-    
     try {
+      // Call the new microservice-enabled fund flow analysis endpoint
+      console.log('🔍 Starting fund flow analysis with Python microservice...');
       
-      // Call the enhanced mapping endpoint
-      console.log('🔍 Running enhanced fund flow analysis...');
-      
-      const res = await fetch(`/api/incident/${incidentId}/enhanced-mapping`, { 
+      const res = await fetch('/api/fund-flow/analyze', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({}) // No parameters needed for now
+        body: JSON.stringify({
+          incidentId,
+          config: {
+            maxDepth: 6,
+            enableAIClassification: true
+          }
+        })
       });
-      
-      clearTimeout(timeoutId);
       
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || errorData.details || `HTTP ${res.status}: ${res.statusText}`);
+        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
       }
       
       const data = await res.json();
       
-      // The backend already stores the analysis and returns analysis_id
-      const analysisId = data.analysis_id;
+      // Start progress tracking
+      const analysisId = data.analysisId;
       setAnalysisId(analysisId);
+      setIsRunning(true);
+      
+      // Poll for progress updates
+      const progressInterval = setInterval(async () => {
+        try {
+          const progressRes = await fetch(`/api/fund-flow/analyze?analysisId=${analysisId}`);
+          if (progressRes.ok) {
+            const progressData = await progressRes.json();
+            setProgress(progressData.analysis);
+            
+            if (progressData.analysis.status === 'completed') {
+              clearInterval(progressInterval);
+              setIsRunning(false);
+              setAnalysisData(progressData.analysis.results_data);
+            } else if (progressData.analysis.status === 'failed') {
+              clearInterval(progressInterval);
+              setIsRunning(false);
+              setError(progressData.analysis.error_message || 'Analysis failed');
+            }
+          }
+        } catch (error) {
+          console.error('Progress check failed:', error);
+        }
+      }, 3000); // Check every 3 seconds
+      
+      setLoading(false);
+      
+    } catch (e: any) {
+      console.error('Analysis failed:', e);
+      setError(e.message || 'Failed to start analysis. Please try again.');
+      setLoading(false);
+    }
+  }
       
       // Format the data for display
       const formattedData: AnalysisData = {
@@ -274,6 +304,9 @@ export default function Analyse() {
   // Process detailed transactions into Sankey diagram data
   const sankeyData = useMemo(() => {
     if (!analysisData?.detailed_transactions) return null;
+    
+    console.log('🔍 Processing sankeyData with detailed_transactions:', analysisData.detailed_transactions);
+    console.log('🔍 Total value traced:', analysisData.flow_analysis?.total_value_traced);
 
     // Create a proper fund flow structure
     const flowData = {
@@ -304,7 +337,9 @@ export default function Analyse() {
     let linkIndex = 0;
     const addressToIndex = new Map<string, number>();
     const existingLinks = new Map<string, number>();
+    const visitedAddresses = new Set<string>(); // Track visited addresses to prevent cycles
     addressToIndex.set(victimWallet.toLowerCase(), 0); // Use lowercase for consistency
+    visitedAddresses.add(victimWallet.toLowerCase());
 
     // Process tracked transactions (these are the fund flow paths)
     const trackedTxs = analysisData.detailed_transactions.filter(tx => tx.type === 'tracked');
@@ -313,8 +348,23 @@ export default function Analyse() {
       const from = tx.from;
       const to = tx.to;
       const value = typeof tx.value === 'number' ? tx.value : parseFloat(tx.value) || 0;
+      
+      console.log(`🔍 Processing transaction: ${from} → ${to}, value: ${tx.value} (parsed: ${value})`);
 
       if (!from || !to) {
+        return;
+      }
+
+      // Skip self-loops
+      if (from.toLowerCase() === to.toLowerCase()) {
+        console.warn(`Skipping self-loop transaction: ${from} → ${to}`);
+        return;
+      }
+
+      // Skip if target already visited (prevents cycles)
+      const toLower = to.toLowerCase();
+      if (visitedAddresses.has(toLower)) {
+        console.warn(`Skipping circular transaction: ${from} → ${to} (target already visited)`);
         return;
       }
 
@@ -334,7 +384,6 @@ export default function Analyse() {
       }
 
       // Add target node if not exists (use lowercase for comparison)
-      const toLower = to.toLowerCase();
       if (!addressToIndex.has(toLower)) {
         addressToIndex.set(toLower, nodeIndex);
         const targetNode = {
@@ -379,6 +428,9 @@ export default function Analyse() {
           key: `link-${sourceIndex}-${targetIndex}-${linkIndex++}`
         };
         flowData.links.push(newLink);
+        
+        // Mark target as visited to prevent cycles
+        visitedAddresses.add(toLower);
       }
     });
 
@@ -420,21 +472,24 @@ export default function Analyse() {
         const sourceIndex = addressToIndex.get(sourceTx.from.toLowerCase());
         const targetIndex = addressToIndex.get(toLower);
         
-        const endpointLinkKey = `endpoint-${sourceTx.from.toLowerCase()}-${toLower}`;
-        if (!existingLinks.has(endpointLinkKey)) {
-          existingLinks.set(endpointLinkKey, value);
-          const endpointLink = {
-            source: sourceIndex,
-            target: targetIndex,
-            value: value,
-            sourceName: sourceTx.from,
-            targetName: to,
-            description: `Endpoint: ${tx.endpointType || 'Unknown'}`,
-            type: 'endpoint',
-            confidence: tx.confidence,
-            key: `endpoint-${sourceIndex}-${targetIndex}-${linkIndex++}`
-          };
-          flowData.links.push(endpointLink);
+        // Skip if this would create a cycle (endpoint pointing back to an earlier node)
+        if (sourceIndex !== undefined && targetIndex !== undefined) {
+          const endpointLinkKey = `endpoint-${sourceTx.from.toLowerCase()}-${toLower}`;
+          if (!existingLinks.has(endpointLinkKey)) {
+            existingLinks.set(endpointLinkKey, value);
+            const endpointLink = {
+              source: sourceIndex,
+              target: targetIndex,
+              value: value,
+              sourceName: sourceTx.from,
+              targetName: to,
+              description: `Endpoint: ${tx.endpointType || 'Unknown'}`,
+              type: 'endpoint',
+              confidence: tx.confidence,
+              key: `endpoint-${sourceIndex}-${targetIndex}-${linkIndex++}`
+            };
+            flowData.links.push(endpointLink);
+          }
         }
       }
     });
@@ -446,7 +501,11 @@ export default function Analyse() {
       const firstTxFromLower = firstTx.from.toLowerCase();
       const firstTxToLower = firstTx.to.toLowerCase();
       
-      if (firstTxFromLower === victimWalletLower && !existingLinks.has(`${victimWalletLower}-${firstTxToLower}`)) {
+      // Only create victim link if it's a valid forward flow (not a cycle)
+      if (firstTxFromLower === victimWalletLower && 
+          !existingLinks.has(`${victimWalletLower}-${firstTxToLower}`) &&
+          firstTxFromLower !== firstTxToLower) { // Prevent self-loops
+        
         const targetIndex = addressToIndex.get(firstTxToLower);
         if (targetIndex !== undefined) {
           const victimLink = {
@@ -464,6 +523,11 @@ export default function Analyse() {
         }
       }
     }
+    
+    console.log('🔍 Final sankeyData flowData:', flowData);
+    console.log('🔍 Total nodes:', flowData.nodes.length);
+    console.log('🔍 Total links:', flowData.links.length);
+    console.log('🔍 Total value in links:', flowData.links.reduce((sum, link) => sum + (link.value || 0), 0));
 
     return flowData;
   }, [analysisData?.detailed_transactions]);
@@ -508,6 +572,11 @@ export default function Analyse() {
       };
     });
 
+    console.log('🔍 Final coloredSankeyData:', { nodes, links });
+    console.log('🔍 Total nodes in colored data:', nodes.length);
+    console.log('🔍 Total links in colored data:', links.length);
+    console.log('🔍 Total value in colored links:', links.reduce((sum, link) => sum + (link.value || 0), 0));
+    
     return { nodes, links };
   }, [sankeyData]);
 
@@ -565,6 +634,21 @@ export default function Analyse() {
         {error && (
           <div className={styles.errorMessage}>
             {error}
+          </div>
+        )}
+        
+        {isRunning && (
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <p>Analysis running in Python microservice...</p>
+            {progress && (
+              <div className={styles.progressInfo}>
+                <p>Status: {progress.status}</p>
+                {progress.progress_data && (
+                  <p>Progress: {JSON.stringify(progress.progress_data)}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -858,8 +942,15 @@ export default function Analyse() {
                         width: '100%', 
                         maxHeight: '800px' 
                       }}>
-                        <ResponsiveSankey
+                        <SafeSankey
                           data={coloredSankeyData}
+                          method="enhanced"
+                          showWarnings={true}
+                          onDataProcessed={(result) => {
+                            if (result.cycleCount > 0) {
+                              console.log(`SafeSankey processed: ${result.cycleCount} circular links removed`);
+                            }
+                          }}
                           margin={{ top: 40, right: 60, bottom: 40, left: 60 }}
                           align="justify"
                           colors={(node) => {
@@ -886,7 +977,6 @@ export default function Analyse() {
                           labelOrientation="vertical"
                           labelPadding={30}
                           labelTextColor={{ from: 'color', modifiers: [['darker', 1]] }}
-
                           animate={true}
                           theme={{
                             tooltip: {

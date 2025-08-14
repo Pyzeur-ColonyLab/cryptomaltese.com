@@ -22,10 +22,12 @@ A blockchain forensics platform for incident submission, report generation, and 
 ## 🏗️ Architecture
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **Backend**: Node.js with PostgreSQL database
+- **Backend**: Node.js API with Python microservice for algorithm processing
+- **Database**: PostgreSQL with microservice-ready schema
 - **Visualization**: Nivo (Sankey diagrams)
 - **External APIs**: Etherscan for blockchain data
 - **Report Generation**: PDF-lib for PDF creation
+- **Microservice**: Python FastAPI service for fund flow analysis
 
 ## 🚀 Quick Start
 
@@ -69,8 +71,16 @@ A blockchain forensics platform for incident submission, report generation, and 
 
 5. **Start development server**
    ```bash
+   # Option 1: Start services individually
+   cd python-service
+   python main.py
+   
+   # In another terminal:
    cd user-interface
    npm run dev
+   
+   # Option 2: Use Docker Compose (recommended)
+   docker-compose up
    ```
 
 ## 📁 Project Structure
@@ -86,17 +96,23 @@ cryptomaltese.com/
 │   │   │   └── Analyse.tsx         # Analysis dashboard
 │   │   └── services/       # API services
 │   └── public/             # Static assets
+├── python-service/          # Python microservice for algorithm processing
+│   ├── main.py             # FastAPI application
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile         # Container configuration
 ├── services/               # Backend services
 │   ├── etherscan.ts        # Etherscan API integration
 │   ├── bitcoin.ts          # Bitcoin API integration
 │   └── types/              # TypeScript type definitions
 ├── db/                     # Database files
-│   ├── schema.sql          # Database schema
+│   ├── schema.sql          # Microservice-ready database schema
 │   ├── models.ts           # Database models
 │   └── migrate_analysis_table.sql
+├── docker-compose.yml      # Multi-service orchestration
 └── docs/                   # Documentation
     ├── API_DOCUMENTATION.md
     ├── DEPLOYMENT_GUIDE.md
+    ├── micro-service.md    # Microservice architecture guide
     ├── requirements.md
     └── technical-specs.md
 ```

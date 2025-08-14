@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import styles from './ConsultReport.module.css';
 import { ResponsiveSankey } from '@nivo/sankey';
+import SafeSankey from './components/SafeSankey';
 import Modal from './components/Modal';
 import { toPng } from 'html-to-image';
 
@@ -231,9 +232,16 @@ const Mapping: React.FC = () => {
             marginBottom: '16px',
             height: '500px'
           }}>
-            <ResponsiveSankey
+            <SafeSankey
               data={nivoSankeyData}
-                                margin={{ top: 40, right: 60, bottom: 40, left: 60 }}
+              method="enhanced"
+              showWarnings={true}
+              onDataProcessed={(result) => {
+                if (result.cycleCount > 0) {
+                  console.log(`SafeSankey processed: ${result.cycleCount} circular links removed`);
+                }
+              }}
+              margin={{ top: 40, right: 60, bottom: 40, left: 60 }}
               align="justify"
               colors={(node) => {
                 // Custom color scheme matching legend
@@ -255,9 +263,9 @@ const Mapping: React.FC = () => {
               linkHoverOthersOpacity={0.1}
               linkContract={3}
               enableLinkGradient={true}
-                             labelPosition="outside"
-               labelOrientation="vertical"
-               labelPadding={30}
+              labelPosition="outside"
+              labelOrientation="vertical"
+              labelPadding={30}
               labelTextColor={{ from: 'color', modifiers: [['darker', 1]] }}
               animate={true}
               motionStiffness={140}

@@ -1,16 +1,20 @@
 {
   "name": "cryptomaltese.com",
   "version": "1.0.0",
-  "description": "A blockchain forensics platform for incident submission, report generation, and fund flow mapping",
+  "description": "A blockchain forensics platform with Python microservice for fund flow analysis",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "cd user-interface && npm run dev",
+    "build": "cd user-interface && npm run build",
+    "start": "cd user-interface && npm run start",
+    "setup": "cd user-interface && npm install && cd ../db && ./setup.sh"
   },
   "keywords": [
     "blockchain",
     "forensics",
     "cryptocurrency",
-    "fund-tracking"
+    "fund-tracking",
+    "microservice"
   ],
   "author": "Pyzeur-ColonyLab",
   "license": "MIT",

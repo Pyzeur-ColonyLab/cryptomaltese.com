@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Your existing Next.js app
+  nextjs-app:
+    build: ./user-interface
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - python-algorithm
+    environment:
+      - DATABASE_URL=postgresql://crypto_user:secure_password@postgres:5432/crypto_sentinel
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - NODE_ENV=development
+    volumes:
+      - ./user-interface:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # New Python microservice  
+  python-algorithm:
+    build: ./python-service
+    ports:
+      - "8000:8000"
+    environment:
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - DATABASE_URL=postgresql://crypto_user:secure_password@postgres:5432/crypto_sentinel
+      - PYTHON_SERVICE_NAME=python-algorithm
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+    volumes:
+      - ./python-service:/app
+      - /app/__pycache__
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Your existing database
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=crypto_sentinel
+      - POSTGRES_USER=crypto_user
+      - POSTGRES_PASSWORD=secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crypto_user -d crypto_sentinel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data: 

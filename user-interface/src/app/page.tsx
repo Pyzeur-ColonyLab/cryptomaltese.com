@@ -3,7 +3,7 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 import IncidentForm from './IncidentForm';
-import Analyse from './Analyse';
+import Analyse from './analyse/page';
 import React, { useState } from 'react';
 
 export default function Home() {

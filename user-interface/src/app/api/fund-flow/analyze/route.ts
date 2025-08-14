@@ -1,84 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FundFlowTracker } from '@/services/fund-flow/tracker';
-import { PatternDetector } from '@/services/fund-flow/pattern-detector';
-import { AddressClassifier } from '@/services/fund-flow/address-classifier';
-import { PathAnalyzer } from '@/services/fund-flow/path-analyzer';
-import { EndpointDetector } from '@/services/fund-flow/endpoint-detector';
-import { getIncidentById } from '@/db/queries';
+import { createFundFlowAnalysis, updateFundFlowAnalysisStatus } from '@/db/queries';
 
 export async function POST(req: NextRequest) {
     try {
-        const { incidentId, enableAIAnalysis = true } = await req.json();
+        const { incidentId, config } = await req.json();
         
+        // Validate request
         if (!incidentId) {
             return NextResponse.json({ error: 'Incident ID is required' }, { status: 400 });
         }
-        
-        // Get incident details
-        const incident = await getIncidentById(incidentId);
-        if (!incident) {
-            return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
-        }
-        
-        // Initialize services
-        const patternDetector = new PatternDetector();
-        const addressClassifier = new AddressClassifier();
-        const pathAnalyzer = new PathAnalyzer();
-        const endpointDetector = new EndpointDetector();
-        
-        // Initialize tracker with real Etherscan service
-        const { getEvmTransactions } = await import('@/services/etherscan');
-        
-        // Create a real Etherscan service wrapper
-        const etherscanService = {
-            async getTransactions(address: string, timestamp: Date) {
-                return await getEvmTransactions(address, 1);
-            },
-            async getOutgoingTransactions(address: string) {
-                return await getEvmTransactions(address, 1);
-            }
-        };
-        
-        const tracker = new FundFlowTracker(
-            etherscanService,
-            patternDetector,
-            addressClassifier,
-            pathAnalyzer
-        );
-        
-        // Start async analysis
-        const analysisPromise = tracker.analyzeIncident(
+
+        // Create analysis record in database
+        const analysisId = await createFundFlowAnalysis(
             incidentId,
-            incident.wallet_address,
-            '0', // lossAmount placeholder
-            new Date(incident.discovered_at),
-            { 
-                maxDepth: 6, 
-                highVolumeThreshold: 5000,
-                enableAIClassification: enableAIAnalysis
-            }
+            '0x0000000000000000000000000000000000000000', // Will be updated by Python service
+            '0',
+            new Date(),
+            config?.maxDepth || 6
         );
-        
-        // Don't await - return immediately with analysis ID
-        const analysisId = await tracker.createAnalysisRecord(incidentId, incident.wallet_address, '0', new Date(incident.discovered_at));
-        
-        // Process in background
-        analysisPromise.catch(error => {
-            console.error('Analysis failed:', error);
-            // Update analysis status to failed
+
+        // Update status to running
+        await updateFundFlowAnalysisStatus(analysisId, 'running');
+
+        // Call Python microservice
+        const pythonResponse = await fetch('http://python-service:8000/analyze-fund-flow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                analysis_id: analysisId,
+                incident_id: incidentId,
+                algorithm_config: config || {}
+            })
         });
-        
+
+        if (!pythonResponse.ok) {
+            throw new Error(`Python service error: ${pythonResponse.statusText}`);
+        }
+
+        const pythonResult = await pythonResponse.json();
+
+        // Return immediately (Python runs in background)
         return NextResponse.json({ 
-            analysisId,
+            analysisId, 
             status: 'started',
-            message: 'Enhanced fund flow analysis started'
+            pythonServiceId: pythonResult.service_id,
+            message: 'Analysis started in Python microservice'
         });
         
     } catch (error) {
-        console.error('Fund flow analysis failed:', error);
+        console.error('Failed to start fund flow analysis:', error);
         return NextResponse.json({ 
-            error: 'Analysis failed',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to start analysis' 
         }, { status: 500 });
     }
 }
@@ -91,21 +63,30 @@ export async function GET(req: NextRequest) {
         if (!analysisId) {
             return NextResponse.json({ error: 'Analysis ID is required' }, { status: 400 });
         }
+
+        // Get analysis status from database
+        const analysis = await getFundFlowAnalysis(parseInt(analysisId));
         
-        // This would typically fetch analysis results from database
-        // For now, return placeholder response
-        return NextResponse.json({
-            analysisId,
-            status: 'completed',
-            progress: 100,
-            message: 'Analysis completed successfully'
-        });
+        if (!analysis) {
+            return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ analysis });
         
     } catch (error) {
-        console.error('Failed to get analysis status:', error);
+        console.error('Failed to get analysis:', error);
         return NextResponse.json({ 
-            error: 'Failed to get analysis status',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to get analysis' 
         }, { status: 500 });
     }
+}
+
+async function getFundFlowAnalysis(analysisId: number) {
+    // This would be implemented in your database queries
+    // For now, returning a mock response
+    return {
+        id: analysisId,
+        status: 'running',
+        progress: 0
+    };
 } 

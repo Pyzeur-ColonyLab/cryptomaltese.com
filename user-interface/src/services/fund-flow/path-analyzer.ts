@@ -48,13 +48,16 @@ export class PathAnalyzer {
         let confidence = 0.5; // Base confidence
         const detectedPatterns: any = {};
         
-        // Value-based scoring
-        const value = parseFloat(tx.value);
+        // Value-based scoring - convert from wei to ETH
+        const valueInWei = parseFloat(tx.value);
+        const value = valueInWei / 1e18; // Convert wei to ETH
         if (value > 1) {
-            confidence += 0.2; // High value transactions
+            confidence += 0.2; // High value transactions (> 1 ETH)
             detectedPatterns.highValue = true;
         } else if (value > 0.1) {
-            confidence += 0.1; // Medium value transactions
+            confidence += 0.1; // Medium value transactions (> 0.1 ETH)
+        } else if (value > 0.01) {
+            confidence += 0.05; // Small value transactions (> 0.01 ETH)
         }
         
         // Time-based scoring
@@ -98,7 +101,7 @@ export class PathAnalyzer {
         return {
             to: tx.to,
             hash: tx.hash,
-            value: value,
+            value: value, // Value is now in ETH (converted from wei)
             timestamp: tx.timeStamp ? new Date(parseInt(tx.timeStamp) * 1000) : new Date(),
             confidence: confidence,
             detectedPatterns: detectedPatterns,
