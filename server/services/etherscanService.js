@@ -163,31 +163,122 @@ class EtherscanService {
    * @returns {Array} Normalized transaction array
    */
   normalizeInternalTransactions(etherscanResponse) {
-    if (!etherscanResponse || !etherscanResponse.result) {
-      return []
+    try {
+      if (!etherscanResponse) {
+        console.warn('Etherscan response is null or undefined')
+        return []
+      }
+
+      if (!etherscanResponse.result) {
+        console.log('No transaction results found in Etherscan response')
+        return []
+      }
+
+      const transactions = Array.isArray(etherscanResponse.result) 
+        ? etherscanResponse.result 
+        : []
+
+      console.log(`Processing ${transactions.length} internal transactions from Etherscan`)
+
+      const normalized = transactions.map((tx, index) => {
+        try {
+          return {
+            blockNumber: tx.blockNumber ? parseInt(tx.blockNumber) : null,
+            timestampUnix: tx.timeStamp ? parseInt(tx.timeStamp) : null,
+            fromAddress: tx.from || null,
+            toAddress: tx.to || null,
+            value: tx.value || '0',
+            contractAddress: tx.contractAddress || null,
+            input: tx.input || null,
+            type: tx.type || null,
+            gas: tx.gas ? parseInt(tx.gas) : null,
+            gasUsed: tx.gasUsed ? parseInt(tx.gasUsed) : null,
+            isError: tx.isError === '1',
+            errorCode: tx.errCode || null,
+            etherscanStatus: etherscanResponse.status,
+            etherscanMessage: etherscanResponse.message,
+            rawJson: tx
+          }
+        } catch (error) {
+          console.error(`Error normalizing transaction ${index}:`, error)
+          console.error('Raw transaction data:', tx)
+          throw new Error(`Failed to normalize transaction data at index ${index}: ${error.message}`)
+        }
+      })
+
+      console.log(`Successfully normalized ${normalized.length} transactions`)
+      return normalized
+    } catch (error) {
+      console.error('Error in normalizeInternalTransactions:', error)
+      throw error
     }
+  }
 
-    const transactions = Array.isArray(etherscanResponse.result) 
-      ? etherscanResponse.result 
-      : []
+  /**
+   * Normalize main transaction data for database storage
+   * @param {Object} etherscanResponse - Raw Etherscan API response from eth_getTransactionByHash
+   * @returns {Object} Normalized transaction object
+   */
+  normalizeMainTransaction(etherscanResponse) {
+    try {
+      if (!etherscanResponse) {
+        console.warn('Etherscan response is null or undefined')
+        return null
+      }
 
-    return transactions.map(tx => ({
-      blockNumber: tx.blockNumber ? parseInt(tx.blockNumber) : null,
-      timestampUnix: tx.timeStamp ? parseInt(tx.timeStamp) : null,
-      fromAddress: tx.from || null,
-      toAddress: tx.to || null,
-      value: tx.value || '0',
-      contractAddress: tx.contractAddress || null,
-      input: tx.input || null,
-      type: tx.type || null,
-      gas: tx.gas ? parseInt(tx.gas) : null,
-      gasUsed: tx.gasUsed ? parseInt(tx.gasUsed) : null,
-      isError: tx.isError === '1',
-      errorCode: tx.errCode || null,
-      etherscanStatus: etherscanResponse.status,
-      etherscanMessage: etherscanResponse.message,
-      rawJson: tx
-    }))
+      if (!etherscanResponse.result) {
+        console.log('No transaction result found in Etherscan response')
+        return null
+      }
+
+      const tx = etherscanResponse.result
+      console.log('Processing main transaction from Etherscan')
+
+      // Helper function to convert hex to decimal
+      const hexToDecimal = (hex) => {
+        if (!hex || hex === '0x' || hex === '0x0') return '0'
+        return parseInt(hex, 16).toString()
+      }
+
+      // Helper function to convert hex to number (for smaller values)
+      const hexToNumber = (hex) => {
+        if (!hex || hex === '0x' || hex === '0x0') return 0
+        return parseInt(hex, 16)
+      }
+
+      const normalized = {
+        blockNumber: hexToNumber(tx.blockNumber),
+        timestampUnix: null, // Will need to fetch this separately if needed
+        fromAddress: tx.from || null,
+        toAddress: tx.to || null,
+        value: hexToDecimal(tx.value),
+        contractAddress: null, // Not applicable for main transactions
+        input: tx.input || null,
+        type: tx.type ? hexToNumber(tx.type).toString() : null,
+        gas: hexToDecimal(tx.gas),
+        gasUsed: null, // Not available in transaction details, need receipt for this
+        isError: false, // Main transaction API doesn't return error status directly
+        errorCode: null,
+        etherscanStatus: '1', // Always success if we get the transaction
+        etherscanMessage: 'OK',
+        // Additional fields specific to main transactions
+        gasPrice: hexToDecimal(tx.gasPrice),
+        maxFeePerGas: tx.maxFeePerGas ? hexToDecimal(tx.maxFeePerGas) : null,
+        maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? hexToDecimal(tx.maxPriorityFeePerGas) : null,
+        nonce: hexToNumber(tx.nonce),
+        transactionIndex: hexToNumber(tx.transactionIndex),
+        blockHash: tx.blockHash || null,
+        chainId: tx.chainId ? hexToNumber(tx.chainId) : null,
+        rawJson: tx
+      }
+
+      console.log('Successfully normalized main transaction')
+      return normalized
+    } catch (error) {
+      console.error('Error in normalizeMainTransaction:', error)
+      console.error('Raw transaction data:', etherscanResponse)
+      throw error
+    }
   }
 
   /**

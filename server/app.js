@@ -117,12 +117,15 @@ process.on('SIGINT', () => {
   })
 })
 
-// Start server
-const PORT = config.port
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Incident Reporter server running on port ${PORT}`)
-  console.log(`🌍 Environment: ${config.nodeEnv}`)
-  console.log(`🔗 Local: http://localhost:${PORT}`)
-})
+// Start server only if not in test mode and not required as module
+let server = null
+if (require.main === module && config.nodeEnv !== 'test') {
+  const PORT = config.port
+  server = app.listen(PORT, () => {
+    console.log(`🚀 Incident Reporter server running on port ${PORT}`)
+    console.log(`🌍 Environment: ${config.nodeEnv}`)
+    console.log(`🔗 Local: http://localhost:${PORT}`)
+  })
+}
 
 module.exports = { app, server }

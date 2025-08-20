@@ -3,6 +3,7 @@ const TransactionDetail = require('../models/TransactionDetail')
 const etherscanService = require('../services/etherscanService')
 const db = require('../models/database')
 const { AppError } = require('../middlewares/errorHandler')
+const { v4: uuidv4 } = require('uuid')
 
 class IncidentController {
   /**
@@ -40,8 +41,8 @@ class IncidentController {
           })
         }
 
-        // Fetch internal transactions
-        etherscanResponse = await etherscanService.getInternalTransactions(transactionHash)
+        // Fetch main transaction details
+        etherscanResponse = await etherscanService.getTransactionByHash(transactionHash)
       } catch (etherscanError) {
         console.error('Etherscan API error:', etherscanError)
         
@@ -61,32 +62,82 @@ class IncidentController {
       console.log(`Creating incident record for wallet: ${walletAddress}`)
       
       const result = await db.transaction(async (client) => {
-        // Create the incident record
-        const incident = await Incident.create({
-          walletAddress,
-          transactionHash,
+        console.log('Starting database transaction')
+        
+        // Create the incident record within transaction
+        const incidentId = uuidv4()
+        const incidentQuery = `
+          INSERT INTO incidents (id, wallet_address, transaction_hash, description)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *
+        `
+        const incidentResult = await client.query(incidentQuery, [
+          incidentId, 
+          walletAddress, 
+          transactionHash, 
           description
-        })
+        ])
+        const incident = incidentResult.rows[0]
+        console.log(`Created incident ${incident.id} within transaction`)
 
-        // Normalize and create transaction details
-        const normalizedTransactions = etherscanService.normalizeInternalTransactions(etherscanResponse)
+        // Normalize main transaction data
+        const normalizedTransaction = etherscanService.normalizeMainTransaction(etherscanResponse)
+        console.log('Normalized main transaction data')
         
         const transactionDetails = []
-        for (const txData of normalizedTransactions) {
-          const detail = await TransactionDetail.create({
-            incidentId: incident.id,
-            ...txData
-          })
-          transactionDetails.push(detail)
+        
+        if (normalizedTransaction) {
+          // Create transaction detail within the same transaction
+          const detailQuery = `
+            INSERT INTO transaction_details (
+              incident_id, block_number, timestamp_unix, from_address, to_address,
+              value, contract_address, input, type, gas, gas_used,
+              is_error, error_code, etherscan_status, etherscan_message, raw_json,
+              gas_price, max_fee_per_gas, max_priority_fee_per_gas, nonce,
+              transaction_index, block_hash, chain_id
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+            RETURNING *
+          `
+          
+          const detailResult = await client.query(detailQuery, [
+            incident.id,
+            normalizedTransaction.blockNumber,
+            normalizedTransaction.timestampUnix,
+            normalizedTransaction.fromAddress,
+            normalizedTransaction.toAddress,
+            normalizedTransaction.value,
+            normalizedTransaction.contractAddress,
+            normalizedTransaction.input,
+            normalizedTransaction.type,
+            normalizedTransaction.gas,
+            normalizedTransaction.gasUsed,
+            normalizedTransaction.isError,
+            normalizedTransaction.errorCode,
+            normalizedTransaction.etherscanStatus,
+            normalizedTransaction.etherscanMessage,
+            JSON.stringify(normalizedTransaction.rawJson),
+            normalizedTransaction.gasPrice,
+            normalizedTransaction.maxFeePerGas,
+            normalizedTransaction.maxPriorityFeePerGas,
+            normalizedTransaction.nonce,
+            normalizedTransaction.transactionIndex,
+            normalizedTransaction.blockHash,
+            normalizedTransaction.chainId
+          ])
+          transactionDetails.push(detailResult.rows[0])
+          console.log(`Created transaction detail ${detailResult.rows[0].id} within transaction`)
         }
+        
+        console.log(`Transaction completed: incident ${incident.id} with ${transactionDetails.length} details`)
 
         return {
           incident,
           transactionDetails,
           etherscanData: {
-            status: etherscanResponse.status,
-            message: etherscanResponse.message,
-            transactionCount: normalizedTransactions.length
+            status: etherscanResponse.jsonrpc ? 'success' : (etherscanResponse.status || '1'),
+            message: etherscanResponse.jsonrpc ? 'OK' : (etherscanResponse.message || 'Transaction retrieved'),
+            transactionCount: transactionDetails.length
           }
         }
       })

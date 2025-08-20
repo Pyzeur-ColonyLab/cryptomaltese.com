@@ -19,16 +19,26 @@ class TransactionDetail {
         errorCode,
         etherscanStatus,
         etherscanMessage,
-        rawJson
+        rawJson,
+        // New main transaction fields
+        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        nonce,
+        transactionIndex,
+        blockHash,
+        chainId
       } = transactionData
 
       const query = `
         INSERT INTO transaction_details (
           incident_id, block_number, timestamp_unix, from_address, to_address,
           value, contract_address, input, type, gas, gas_used,
-          is_error, error_code, etherscan_status, etherscan_message, raw_json
+          is_error, error_code, etherscan_status, etherscan_message, raw_json,
+          gas_price, max_fee_per_gas, max_priority_fee_per_gas, nonce,
+          transaction_index, block_hash, chain_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
         RETURNING *
       `
 
@@ -48,7 +58,14 @@ class TransactionDetail {
         errorCode,
         etherscanStatus,
         etherscanMessage,
-        rawJson
+        JSON.stringify(rawJson),
+        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        nonce,
+        transactionIndex,
+        blockHash,
+        chainId
       ])
 
       return result.rows[0]

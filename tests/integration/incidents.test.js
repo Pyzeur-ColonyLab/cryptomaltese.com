@@ -9,8 +9,8 @@ const db = require('../../server/models/database')
 // Mock Etherscan service
 jest.mock('../../server/services/etherscanService', () => ({
   verifyTransactionExists: jest.fn(),
-  getInternalTransactions: jest.fn(),
-  normalizeInternalTransactions: jest.fn()
+  getTransactionByHash: jest.fn(),
+  normalizeMainTransaction: jest.fn()
 }))
 
 const etherscanService = require('../../server/services/etherscanService')
@@ -22,12 +22,44 @@ describe('Incidents API', () => {
     
     // Default mock implementations
     etherscanService.verifyTransactionExists.mockResolvedValue(true)
-    etherscanService.getInternalTransactions.mockResolvedValue({
-      status: '1',
-      message: 'OK',
-      result: []
+    etherscanService.getTransactionByHash.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: 1,
+      result: {
+        blockNumber: '0x123456',
+        from: '0x1234567890123456789012345678901234567890',
+        to: '0x2234567890123456789012345678901234567890',
+        value: '0x1000000000000000',
+        gas: '0x5208',
+        gasPrice: '0x3b9aca00',
+        nonce: '0x1',
+        hash: '0x1234567890123456789012345678901234567890123456789012345678901234'
+      }
     })
-    etherscanService.normalizeInternalTransactions.mockReturnValue([])
+    etherscanService.normalizeMainTransaction.mockReturnValue({
+      blockNumber: 1193046,
+      timestampUnix: null,
+      fromAddress: '0x1234567890123456789012345678901234567890',
+      toAddress: '0x2234567890123456789012345678901234567890',
+      value: '72057594037927936',
+      contractAddress: null,
+      input: '0x',
+      type: '2',
+      gas: '21000',
+      gasUsed: null,
+      isError: false,
+      errorCode: null,
+      etherscanStatus: '1',
+      etherscanMessage: 'OK',
+      gasPrice: '1000000000',
+      maxFeePerGas: null,
+      maxPriorityFeePerGas: null,
+      nonce: 1,
+      transactionIndex: 0,
+      blockHash: '0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef123456',
+      chainId: 1,
+      rawJson: {}
+    })
   })
 
   afterAll(async () => {
@@ -60,7 +92,7 @@ describe('Incidents API', () => {
       expect(etherscanService.verifyTransactionExists).toHaveBeenCalledWith(
         validIncidentData.transactionHash
       )
-      expect(etherscanService.getInternalTransactions).toHaveBeenCalledWith(
+      expect(etherscanService.getTransactionByHash).toHaveBeenCalledWith(
         validIncidentData.transactionHash
       )
     })
@@ -134,7 +166,7 @@ describe('Incidents API', () => {
 
     it('should return 502 when Etherscan API fails', async () => {
       etherscanService.verifyTransactionExists.mockResolvedValue(true)
-      etherscanService.getInternalTransactions.mockRejectedValue(
+      etherscanService.getTransactionByHash.mockRejectedValue(
         new Error('API Error')
       )
 
