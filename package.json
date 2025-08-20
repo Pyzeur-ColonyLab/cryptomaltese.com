@@ -1,0 +1,58 @@
+{
+  "name": "cryptomaltese-incident-reporter",
+  "version": "1.0.0",
+  "description": "Cryptocurrency wallet incident reporting system with Etherscan integration",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "migrate": "node migrations/run.js",
+    "lint": "eslint server/ client/js/",
+    "lint:fix": "eslint server/ client/js/ --fix"
+  },
+  "keywords": [
+    "cryptocurrency",
+    "incident-reporting",
+    "ethereum",
+    "blockchain",
+    "security"
+  ],
+  "author": "CryptoMaltese Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.10.0",
+    "helmet": "^7.0.0",
+    "cors": "^2.8.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "joi": "^17.9.2",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "axios": "^1.4.0",
+    "axios-retry": "^3.5.1",
+    "node-cache": "^5.1.2",
+    "uuid": "^9.0.0",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.2",
+    "supertest": "^6.3.3",
+    "cypress": "^12.17.4",
+    "eslint": "^8.45.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^16.0.1",
+    "eslint-plugin-promise": "^6.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

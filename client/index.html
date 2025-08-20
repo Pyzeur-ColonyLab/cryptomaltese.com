@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Report cryptocurrency wallet compromises and security incidents">
+    <meta name="keywords" content="cryptocurrency, wallet, security, incident, report, ethereum, blockchain">
+    <title>CryptoMaltese - Incident Reporter</title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <span class="icon">🛡️</span>
+                    CryptoMaltese
+                </h1>
+                <p class="header-subtitle">Cryptocurrency Incident Reporting</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main">
+            <!-- Intro Section -->
+            <section class="intro">
+                <h2>Report a Wallet Compromise</h2>
+                <p>
+                    If your cryptocurrency wallet has been compromised, report the incident here. 
+                    We'll automatically retrieve blockchain transaction data to help track the incident.
+                </p>
+                <div class="security-notice">
+                    <strong>🔒 Privacy Notice:</strong> Only basic incident details are stored. 
+                    Transaction data is retrieved from public blockchain sources.
+                </div>
+            </section>
+
+            <!-- Incident Report Form -->
+            <section class="form-section">
+                <form id="incident-form" class="incident-form" novalidate>
+                    <div class="form-group">
+                        <label for="wallet-address" class="form-label">
+                            Your Wallet Address <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="wallet-address" 
+                            name="walletAddress"
+                            class="form-input"
+                            placeholder="0x..."
+                            aria-describedby="wallet-address-error wallet-address-help"
+                            required
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                        <div id="wallet-address-help" class="form-help">
+                            Enter the Ethereum wallet address that was compromised
+                        </div>
+                        <div id="wallet-address-error" class="form-error" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transaction-hash" class="form-label">
+                            Transaction Hash <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="transaction-hash" 
+                            name="transactionHash"
+                            class="form-input"
+                            placeholder="0x..."
+                            aria-describedby="transaction-hash-error transaction-hash-help"
+                            required
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                        <div id="transaction-hash-help" class="form-help">
+                            Hash of a transaction related to the compromise
+                        </div>
+                        <div id="transaction-hash-error" class="form-error" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">
+                            Incident Description <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            id="description" 
+                            name="description"
+                            class="form-textarea"
+                            placeholder="Describe what happened to your wallet..."
+                            aria-describedby="description-error description-help description-counter"
+                            required
+                            maxlength="1000"
+                            rows="4"
+                        ></textarea>
+                        <div class="form-footer">
+                            <div id="description-help" class="form-help">
+                                Provide details about how the compromise occurred
+                            </div>
+                            <div id="description-counter" class="character-counter">
+                                <span class="current">0</span>/<span class="max">1000</span>
+                            </div>
+                        </div>
+                        <div id="description-error" class="form-error" role="alert" aria-live="polite"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button 
+                            type="submit" 
+                            id="submit-button"
+                            class="submit-button"
+                            disabled
+                        >
+                            <span class="button-text">Report Incident</span>
+                            <span class="button-spinner" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Success Message -->
+            <section id="success-section" class="success-section" style="display: none;">
+                <div class="success-card">
+                    <div class="success-icon">✅</div>
+                    <h3 class="success-title">Incident Reported Successfully</h3>
+                    <p class="success-message">
+                        Your incident has been recorded with ID: <strong id="incident-id"></strong>
+                    </p>
+                    <div class="success-details">
+                        <p>Blockchain transaction data has been automatically retrieved and stored.</p>
+                        <p>Keep this incident ID for your records.</p>
+                    </div>
+                    <button id="report-another" class="secondary-button">
+                        Report Another Incident
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 CryptoMaltese. Cryptocurrency Security Incident Reporting.</p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Privacy Policy</a>
+                    <a href="#" class="footer-link">Terms of Service</a>
+                    <a href="#" class="footer-link">Contact</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Processing incident report...</p>
+            <p class="loading-subtext">Retrieving blockchain data</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/validation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
