@@ -15,7 +15,16 @@ sudo apt update && sudo apt upgrade -y
 
 # Install required packages
 echo "📦 Installing dependencies..."
-sudo apt install -y nodejs npm nginx git curl
+sudo apt install -y nginx git curl
+
+# Install Node.js 18 LTS (latest stable)
+echo "📦 Installing Node.js 18 LTS..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify Node.js version
+echo "📋 Node.js version: $(node --version)"
+echo "📋 NPM version: $(npm --version)"
 
 # Install PM2 for process management
 sudo npm install -g pm2
