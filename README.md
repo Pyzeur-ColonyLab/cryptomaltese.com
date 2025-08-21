@@ -124,25 +124,171 @@ cryptomaltese.com/
    npm start
    ```
 
-7. **Set up Graph Service (Optional)** 🆕
+7. **Set up Graph Service (Simplified Local Setup)** 🆕
    
-   For advanced transaction flow analysis, set up the Python graph service:
+   For advanced transaction flow analysis, the Python graph service now runs locally without Docker:
    
    ```bash
-   # In a new terminal window
+   # Set up Python environment
    cd graph_service
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
    
-   # Start graph service
-   uvicorn app.main:app --reload --port 8000
+   # Initialize database (first time only)
+   cd ../
+   python scripts/init_db.py
+   
+   # Start graph service (in a separate terminal)
+   ./scripts/run_local.sh
    ```
    
-   See [Graph Service Setup Guide](docs/graph_service_setup.md) for detailed instructions.
+   **Important**: Always run the graph service in a separate terminal window as shown above.
+   
+   See [Local Quick-Start](#-local-quick-start-for-graph-service) section for detailed setup.
 
 The main application will be available at `http://localhost:3000`
 The graph service (if enabled) will be available at `http://localhost:8000`
+
+## 🚀 Local Quick-Start for Graph Service
+
+The Graph Service provides advanced transaction flow analysis and mapping. Here's how to get it running locally:
+
+### Prerequisites
+
+- **Python 3.9+** with pip
+- **PostgreSQL 13+** running locally
+- **Etherscan API key**
+
+### Setup Steps
+
+1. **Create Local Environment Configuration**
+   ```bash
+   cp .env.template .env.local
+   # Edit .env.local with your local settings
+   ```
+   
+   Update `.env.local` with your local configuration:
+   ```env
+   # Database Configuration
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/cryptomaltese_incidents
+   
+   # Etherscan API
+   ETHERSCAN_API_KEY=your_etherscan_api_key_here
+   
+   # Development Settings
+   DEBUG=true
+   LOG_LEVEL=INFO
+   ```
+
+2. **Set up Python Virtual Environment**
+   ```bash
+   cd graph_service
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Initialize Database** (First time only)
+   ```bash
+   cd ..  # Back to project root
+   python scripts/init_db.py
+   ```
+   
+   This will:
+   - Create all required database tables
+   - Set up indexes for performance
+   - Insert sample test data
+   
+4. **Start the Graph Service**
+   ```bash
+   # Always run in a separate terminal!
+   ./scripts/run_local.sh
+   ```
+   
+   **Important**: The script must be run in a **separate terminal window** to avoid blocking your main development workflow.
+
+5. **Verify the Service**
+   ```bash
+   # In another terminal, test the health endpoint
+   curl http://localhost:8000/health
+   ```
+   
+   You should see a response like:
+   ```json
+   {
+     "status": "healthy",
+     "timestamp": "2024-08-21T19:46:00Z",
+     "uptime_seconds": 30,
+     "database": {
+       "status": "connected"
+     },
+     "external_apis": {
+       "etherscan": {
+         "status": "available"
+       }
+     }
+   }
+   ```
+
+### Local Development Workflow
+
+1. **Terminal 1**: Main Node.js application
+   ```bash
+   npm run dev  # Runs on http://localhost:3000
+   ```
+
+2. **Terminal 2**: Python Graph Service
+   ```bash
+   ./scripts/run_local.sh  # Runs on http://localhost:8000
+   ```
+
+### API Endpoints
+
+- **Health Check**: `GET http://localhost:8000/health`
+- **API Documentation**: `http://localhost:8000/docs` (Swagger UI)
+- **Process Incident**: `POST http://localhost:8000/process_incident/{incident_id}`
+- **Job Status**: `GET http://localhost:8000/jobs/{job_id}`
+- **Service Stats**: `GET http://localhost:8000/stats`
+
+### Configuration
+
+The service reads configuration from `.env.local` (priority) or `.env` (fallback). Key settings:
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `ETHERSCAN_API_KEY`: Your Etherscan API key
+- `DEBUG`: Enable debug mode (true/false)
+- `MAX_NODES_PER_GRAPH`: Maximum nodes per graph (default: 500)
+- `MAX_API_CALLS_PER_INCIDENT`: API call limit (default: 25)
+- `PROCESSING_TIMEOUT_SECONDS`: Processing timeout (default: 30)
+
+### Troubleshooting
+
+#### Service Won't Start
+```bash
+# Check if virtual environment is activated
+source graph_service/venv/bin/activate
+
+# Verify dependencies are installed
+pip list | grep uvicorn
+
+# Check if port 8000 is available
+lsof -ti:8000
+```
+
+#### Database Connection Issues
+```bash
+# Test database connection
+psql postgresql://postgres:password@localhost:5432/cryptomaltese_incidents -c "SELECT 1;"
+
+# Re-run database initialization
+python scripts/init_db.py
+```
+
+#### Etherscan API Issues
+- Verify your API key is valid at [etherscan.io/apis](https://etherscan.io/apis)
+- Check rate limits (max 5 calls/second for free tier)
+- Test API directly: `curl "https://api.etherscan.io/api?module=proxy&action=eth_blockNumber&apikey=YOUR_KEY"`
 
 ## 🔧 Configuration
 

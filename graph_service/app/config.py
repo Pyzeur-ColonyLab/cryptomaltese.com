@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     port: int = 8000
     
     # Database Configuration
-    database_url: str
+    database_url: str = "postgresql://postgres:password@localhost:5432/cryptomaltese_incidents"
     database_pool_min_size: int = 5
     database_pool_max_size: int = 10
     database_timeout: int = 30
@@ -66,7 +66,8 @@ class Settings(BaseSettings):
     
     class Config:
         """Pydantic configuration."""
-        env_file = ".env"
+        # Use .env.local if it exists, otherwise fallback to .env
+        env_file = ".env.local" if os.path.exists(".env.local") else ".env"
         case_sensitive = False
         
     def get_database_config(self) -> dict:
