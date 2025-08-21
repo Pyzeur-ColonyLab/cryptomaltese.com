@@ -33,9 +33,9 @@ def get_database_url():
     if not database_url:
         database_url = os.getenv('DATABASE_URL')
     
-    # Default fallback
+    # Default fallback (update this with your remote server details)
     if not database_url:
-        database_url = "postgresql://postgres:password@localhost:5432/cryptomaltese_incidents"
+        database_url = "postgresql://username:password@your-db-server.com:5432/cryptomaltese_incidents"
     
     return database_url
 

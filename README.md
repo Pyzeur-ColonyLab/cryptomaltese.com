@@ -168,10 +168,10 @@ The Graph Service provides advanced transaction flow analysis and mapping. Here'
    # Edit .env.local with your local settings
    ```
    
-   Update `.env.local` with your local configuration:
+   Update `.env.local` with your remote database configuration:
    ```env
-   # Database Configuration
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/cryptomaltese_incidents
+   # Database Configuration (Remote Server)
+   DATABASE_URL=postgresql://username:password@your-db-server.com:5432/cryptomaltese_incidents
    
    # Etherscan API
    ETHERSCAN_API_KEY=your_etherscan_api_key_here
@@ -278,11 +278,17 @@ lsof -ti:8000
 
 #### Database Connection Issues
 ```bash
-# Test database connection
-psql postgresql://postgres:password@localhost:5432/cryptomaltese_incidents -c "SELECT 1;"
+# Test remote database connection
+psql "postgresql://username:password@your-db-server.com:5432/cryptomaltese_incidents" -c "SELECT 1;"
 
 # Re-run database initialization
 python scripts/init_db.py
+
+# Check firewall/network connectivity
+telnet your-db-server.com 5432
+
+# Verify SSL requirements (if applicable)
+psql "postgresql://username:password@your-db-server.com:5432/cryptomaltese_incidents?sslmode=require" -c "SELECT 1;"
 ```
 
 #### Etherscan API Issues

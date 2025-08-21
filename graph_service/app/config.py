@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     
-    # Database Configuration
-    database_url: str = "postgresql://postgres:password@localhost:5432/cryptomaltese_incidents"
+    # Database Configuration  
+    database_url: str = "postgresql://username:password@your-db-server.com:5432/cryptomaltese_incidents"
     database_pool_min_size: int = 5
     database_pool_max_size: int = 10
     database_timeout: int = 30
