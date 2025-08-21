@@ -163,6 +163,7 @@ class TransactionData(BaseModel):
     gas_used: Optional[int] 
     gas_price: Optional[int]
     transaction_hash: str
+    priority_score: int = 0
 
 
 class NodeData(BaseModel):

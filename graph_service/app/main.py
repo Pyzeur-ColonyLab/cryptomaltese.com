@@ -2,6 +2,7 @@
 
 import structlog
 import time
+import json
 from contextlib import asynccontextmanager
 from typing import Dict, Any
 from datetime import datetime
@@ -10,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from .config import settings
 from .db import db_manager
@@ -180,27 +182,27 @@ async def process_incident(
             options=request.options.model_dump() if request.options else None
         )
         
-        # Handle different response types
+        # Handle different response types - use jsonable_encoder for proper serialization
         if result["status"] == "accepted":
             return JSONResponse(
                 status_code=202,
-                content=result
+                content=jsonable_encoder(result)
             )
         elif result["status"] == "conflict":
             return JSONResponse(
                 status_code=409,
-                content=result
+                content=jsonable_encoder(result)
             )
         elif result["status"] == "error":
             if result["error_code"] == "INCIDENT_NOT_FOUND":
                 return JSONResponse(
                     status_code=404,
-                    content=result
+                    content=jsonable_encoder(result)
                 )
             else:
                 return JSONResponse(
                     status_code=400,
-                    content=result
+                    content=jsonable_encoder(result)
                 )
         else:
             # Unexpected status
@@ -262,7 +264,7 @@ async def get_job_status(job_id: str):
         
         return JSONResponse(
             status_code=200,
-            content=result
+            content=jsonable_encoder(result)
         )
     
     except HTTPException:
