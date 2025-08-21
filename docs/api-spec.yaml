@@ -1,0 +1,528 @@
+openapi: 3.0.3
+info:
+  title: CryptoMaltese Incident Reporter API
+  description: |
+    API for reporting cryptocurrency wallet security incidents with automatic 
+    blockchain data retrieval from Etherscan.
+    
+    ## Features
+    - Report wallet compromises
+    - Automatic transaction data retrieval
+    - Real-time validation
+    - Rate limiting
+    - Comprehensive error handling
+    
+    ## Authentication
+    Currently, no authentication is required for reporting incidents.
+    
+    ## Rate Limiting
+    - 100 requests per 15 minutes per IP address
+    - Rate limit headers are included in responses
+    
+    ## Error Handling
+    All errors follow RFC 7807 Problem Details format.
+  version: 1.0.0
+  contact:
+    name: CryptoMaltese Team
+    email: support@cryptomaltese.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.cryptomaltese.com
+    description: Production server
+  - url: https://staging-api.cryptomaltese.com
+    description: Staging server
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the API
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: API is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/incidents:
+    post:
+      summary: Create a new incident report
+      description: |
+        Submit a new cryptocurrency wallet incident report. The system will 
+        automatically retrieve blockchain transaction data from Etherscan.
+      operationId: createIncident
+      tags:
+        - Incidents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncidentRequest'
+            examples:
+              phishing_attack:
+                summary: Phishing attack example
+                value:
+                  walletAddress: "0x742d35cc6601a40298bdc0e7b7d0b5c14c0b8c5e"
+                  transactionHash: "0x1234567890123456789012345678901234567890123456789012345678901234"
+                  description: "My wallet was compromised through a phishing email. The attacker drained my funds."
+      responses:
+        '201':
+          description: Incident created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateIncidentResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '404':
+          description: Transaction not found on blockchain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Transaction already reported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitErrorResponse'
+        '502':
+          description: Blockchain data service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Get all incidents
+      description: Retrieve a paginated list of all reported incidents
+      operationId: getIncidents
+      tags:
+        - Incidents
+      parameters:
+        - name: limit
+          in: query
+          description: Number of incidents to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Number of incidents to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of incidents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIncidentsResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/incidents/{id}:
+    get:
+      summary: Get incident by ID
+      description: Retrieve a specific incident and its transaction details
+      operationId: getIncidentById
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Incident details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetIncidentResponse'
+        '400':
+          description: Invalid incident ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Incident not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/incidents/wallet/{walletAddress}:
+    get:
+      summary: Get incidents by wallet address
+      description: Retrieve all incidents for a specific wallet address
+      operationId: getIncidentsByWallet
+      tags:
+        - Incidents
+      parameters:
+        - name: walletAddress
+          in: path
+          required: true
+          description: Ethereum wallet address
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+        - name: limit
+          in: query
+          description: Number of incidents to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Number of incidents to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Wallet incidents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWalletIncidentsResponse'
+        '400':
+          description: Invalid wallet address format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateIncidentRequest:
+      type: object
+      required:
+        - walletAddress
+        - transactionHash
+        - description
+      properties:
+        walletAddress:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          description: Ethereum wallet address that was compromised
+          example: "0x742d35cc6601a40298bdc0e7b7d0b5c14c0b8c5e"
+        transactionHash:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          description: Hash of a transaction related to the incident
+          example: "0x1234567890123456789012345678901234567890123456789012345678901234"
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Detailed description of the incident
+          example: "My wallet was compromised through a phishing email. The attacker drained my funds."
+
+    CreateIncidentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        message:
+          type: string
+          example: "Incident reported successfully"
+        data:
+          $ref: '#/components/schemas/IncidentData'
+
+    IncidentData:
+      type: object
+      properties:
+        incidentId:
+          type: string
+          format: uuid
+          description: Unique incident identifier
+        walletAddress:
+          type: string
+          description: Compromised wallet address
+        transactionHash:
+          type: string
+          description: Related transaction hash
+        description:
+          type: string
+          description: Incident description
+        createdAt:
+          type: string
+          format: date-time
+          description: Incident creation timestamp
+        transactionCount:
+          type: integer
+          description: Number of internal transactions found
+        etherscanStatus:
+          type: string
+          description: Etherscan API response status
+        etherscanMessage:
+          type: string
+          description: Etherscan API response message
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        wallet_address:
+          type: string
+        transaction_hash:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TransactionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        incident_id:
+          type: string
+          format: uuid
+        block_number:
+          type: integer
+          format: int64
+        timestamp_unix:
+          type: integer
+          format: int64
+        from_address:
+          type: string
+        to_address:
+          type: string
+        value:
+          type: string
+        contract_address:
+          type: string
+          nullable: true
+        input:
+          type: string
+        type:
+          type: string
+        gas:
+          type: integer
+          format: int64
+        gas_used:
+          type: integer
+          format: int64
+        is_error:
+          type: boolean
+        error_code:
+          type: string
+          nullable: true
+        etherscan_status:
+          type: string
+        etherscan_message:
+          type: string
+        raw_json:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    GetIncidentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        data:
+          type: object
+          properties:
+            incident:
+              $ref: '#/components/schemas/Incident'
+            transactionDetails:
+              type: array
+              items:
+                $ref: '#/components/schemas/TransactionDetail'
+
+    GetIncidentsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        data:
+          type: object
+          properties:
+            incidents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Incident'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+
+    GetWalletIncidentsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        data:
+          type: object
+          properties:
+            walletAddress:
+              type: string
+            incidents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Incident'
+            count:
+              type: integer
+
+    PaginationInfo:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of incidents
+        limit:
+          type: integer
+          description: Number of incidents per page
+        offset:
+          type: integer
+          description: Number of incidents skipped
+        hasMore:
+          type: boolean
+          description: Whether there are more incidents available
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+          description: Server uptime in seconds
+        environment:
+          type: string
+          enum: [development, staging, production]
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [fail, error]
+        message:
+          type: string
+          description: Human-readable error message
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [fail]
+        message:
+          type: string
+          example: "Validation failed"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name that failed validation
+              message:
+                type: string
+                description: Validation error message
+              value:
+                description: Value that failed validation
+
+    DuplicateErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [fail]
+        message:
+          type: string
+          example: "This transaction has already been reported"
+        incidentId:
+          type: string
+          format: uuid
+          description: ID of the existing incident
+        reportedAt:
+          type: string
+          format: date-time
+          description: When the incident was originally reported
+
+    RateLimitErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [fail]
+        message:
+          type: string
+          example: "Too many requests from this IP, please try again later."
+        retryAfter:
+          type: integer
+          description: Seconds to wait before making another request
+
+  securitySchemes: {}
+
+tags:
+  - name: Health
+    description: API health monitoring
+  - name: Incidents
+    description: Cryptocurrency incident reporting
