@@ -1,16 +1,27 @@
 # CryptoMaltese Incident Reporter
 
-A comprehensive cryptocurrency wallet incident reporting system with automated blockchain data retrieval. Users can report wallet compromises by providing basic incident details, and the system automatically fetches detailed transaction data from Etherscan.
+A comprehensive cryptocurrency wallet incident reporting system with automated blockchain data retrieval and advanced transaction flow graph analysis. Users can report wallet compromises and automatically generate detailed transaction flow graphs showing fund movements and endpoint classifications.
 
 ## 🛡️ Features
 
+### Core Functionality
 - **Incident Reporting**: Simple form interface for reporting wallet compromises
 - **Automatic Data Retrieval**: Fetches blockchain transaction data from Etherscan API
 - **Real-time Validation**: Client and server-side validation for Ethereum addresses and transaction hashes
 - **Responsive Design**: Mobile-first responsive interface with accessibility features
+
+### Advanced Graph Analysis 🆕
+- **Transaction Flow Graphs**: Automated construction of fund movement visualization
+- **Smart Address Classification**: AI-powered identification of exchanges, mixers, and endpoints
+- **Recursive Transaction Tracing**: Multi-hop fund tracking with intelligent filtering
+- **Risk Assessment**: Confidence scoring for endpoint classifications
+- **Path Analysis**: Identification of critical fund flow paths and percentages
+
+### Security & Performance
 - **Security Hardened**: Rate limiting, input sanitization, and XSS protection
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Performance Optimized**: Caching, compression, and optimized database queries
+- **Microservice Architecture**: Scalable Python service for graph processing
 
 ## 🏗️ Architecture
 
@@ -104,7 +115,7 @@ cryptomaltese.com/
    npm run migrate
    ```
 
-6. **Start the application**
+6. **Start the main application**
    ```bash
    # Development mode
    npm run dev
@@ -113,7 +124,25 @@ cryptomaltese.com/
    npm start
    ```
 
-The application will be available at `http://localhost:3000`
+7. **Set up Graph Service (Optional)** 🆕
+   
+   For advanced transaction flow analysis, set up the Python graph service:
+   
+   ```bash
+   # In a new terminal window
+   cd graph_service
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   
+   # Start graph service
+   uvicorn app.main:app --reload --port 8000
+   ```
+   
+   See [Graph Service Setup Guide](docs/graph_service_setup.md) for detailed instructions.
+
+The main application will be available at `http://localhost:3000`
+The graph service (if enabled) will be available at `http://localhost:8000`
 
 ## 🔧 Configuration
 

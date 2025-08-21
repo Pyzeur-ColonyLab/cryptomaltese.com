@@ -44,6 +44,13 @@ const config = {
   // Cache
   cache: {
     ttlSeconds: parseInt(process.env.CACHE_TTL_SECONDS) || 600 // 10 minutes
+  },
+  
+  // Graph Service
+  graphService: {
+    url: process.env.GRAPH_SERVICE_URL || 'http://localhost:8000',
+    timeout: parseInt(process.env.GRAPH_SERVICE_TIMEOUT_MS) || 35000, // 35 seconds (longer than processing timeout)
+    retryAttempts: parseInt(process.env.GRAPH_SERVICE_RETRY_ATTEMPTS) || 3
   }
 }
 

@@ -1,6 +1,7 @@
 const Incident = require('../models/Incident')
 const TransactionDetail = require('../models/TransactionDetail')
 const etherscanService = require('../services/etherscanService')
+const graphService = require('../services/graphService')
 const db = require('../models/database')
 const { AppError } = require('../middlewares/errorHandler')
 const { v4: uuidv4 } = require('uuid')
@@ -358,6 +359,216 @@ class IncidentController {
     } catch (error) {
       console.error('Error in getIncidentStats:', error)
       next(error)
+    }
+  }
+
+  /**
+   * Start graph processing for an incident
+   * POST /api/incidents/:id/graph
+   */
+  async startGraphProcessing(req, res, next) {
+    try {
+      const { id } = req.params
+      const { options = {} } = req.body
+
+      // Validate incident exists
+      const incident = await Incident.findById(id)
+      if (!incident) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Incident not found'
+        })
+      }
+
+      console.log(`Starting graph processing for incident: ${id}`)
+
+      // Check if graph service is available
+      const isAvailable = await graphService.isAvailable()
+      if (!isAvailable) {
+        return res.status(503).json({
+          status: 'error',
+          message: 'Graph processing service is currently unavailable. Please try again later.',
+          errorCode: 'GRAPH_SERVICE_UNAVAILABLE'
+        })
+      }
+
+      // Start graph processing
+      const result = await graphService.processIncident(id, options)
+      
+      res.status(202).json({
+        status: 'success',
+        message: 'Graph processing started successfully',
+        data: result
+      })
+
+    } catch (error) {
+      console.error('Error in startGraphProcessing:', error)
+      
+      // Handle graph service specific errors
+      if (error.name === 'GraphServiceError') {
+        return res.status(error.statusCode || 500).json({
+          status: 'error',
+          message: error.message,
+          errorCode: error.errorCode || 'GRAPH_SERVICE_ERROR'
+        })
+      }
+      
+      next(error)
+    }
+  }
+
+  /**
+   * Get graph processing status and results
+   * GET /api/incidents/:id/graph
+   */
+  async getGraphStatus(req, res, next) {
+    try {
+      const { id } = req.params
+
+      // Validate incident exists
+      const incident = await Incident.findById(id)
+      if (!incident) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Incident not found'
+        })
+      }
+
+      console.log(`Getting graph status for incident: ${id}`)
+
+      try {
+        // Get job status from graph service
+        const jobStatus = await graphService.getJobStatus(id)
+        
+        // If completed, also fetch detailed graph data from database
+        if (jobStatus.status === 'completed') {
+          const graphData = await this._getGraphDataFromDatabase(id)
+          
+          res.status(200).json({
+            status: 'success',
+            data: {
+              ...jobStatus,
+              graphData
+            }
+          })
+        } else {
+          res.status(200).json({
+            status: 'success',
+            data: jobStatus
+          })
+        }
+
+      } catch (error) {
+        // Handle graph service specific errors
+        if (error.name === 'GraphServiceError') {
+          if (error.statusCode === 404) {
+            return res.status(200).json({
+              status: 'success',
+              data: {
+                status: 'not_started',
+                message: 'Graph processing has not been started for this incident',
+                incident_id: id
+              }
+            })
+          }
+          
+          return res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message,
+            errorCode: error.errorCode || 'GRAPH_SERVICE_ERROR'
+          })
+        }
+        
+        throw error
+      }
+
+    } catch (error) {
+      console.error('Error in getGraphStatus:', error)
+      next(error)
+    }
+  }
+
+  /**
+   * Get graph service health status
+   * GET /api/incidents/graph/health
+   */
+  async getGraphServiceHealth(req, res, next) {
+    try {
+      const health = await graphService.healthCheck()
+      const config = graphService.getConfig()
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          graphService: {
+            ...health,
+            configuration: config
+          }
+        }
+      })
+
+    } catch (error) {
+      console.error('Error in getGraphServiceHealth:', error)
+      next(error)
+    }
+  }
+
+  /**
+   * Helper method to fetch detailed graph data from database
+   * @private
+   */
+  async _getGraphDataFromDatabase(incidentId) {
+    try {
+      const client = db.pool
+      
+      // Get graph metadata
+      const metadataQuery = 'SELECT * FROM incident_graphs WHERE incident_id = $1'
+      const metadataResult = await client.query(metadataQuery, [incidentId])
+      const metadata = metadataResult.rows[0]
+      
+      if (!metadata) {
+        return null
+      }
+      
+      // Get graph nodes (limit to top 100 for performance)
+      const nodesQuery = `
+        SELECT address, entity_type, confidence_score, depth_from_hack, 
+               balance_eth, transaction_count, termination_reason
+        FROM graph_nodes 
+        WHERE incident_id = $1 
+        ORDER BY depth_from_hack, confidence_score DESC
+        LIMIT 100
+      `
+      const nodesResult = await client.query(nodesQuery, [incidentId])
+      
+      // Get graph edges (limit to top 100 for performance)
+      const edgesQuery = `
+        SELECT from_address, to_address, transaction_hash, value_eth, 
+               priority_score, block_number, filter_reason
+        FROM graph_edges 
+        WHERE incident_id = $1 
+        ORDER BY priority_score DESC, value_eth DESC
+        LIMIT 100
+      `
+      const edgesResult = await client.query(edgesQuery, [incidentId])
+      
+      return {
+        metadata: {
+          total_nodes: metadata.total_nodes,
+          total_edges: metadata.total_edges,
+          max_depth: metadata.max_depth,
+          total_value_traced: metadata.total_value_traced,
+          processing_time_seconds: metadata.processing_time_seconds,
+          endpoint_summary: metadata.endpoint_summary,
+          top_paths: metadata.top_paths
+        },
+        nodes: nodesResult.rows,
+        edges: edgesResult.rows
+      }
+      
+    } catch (error) {
+      console.error('Error fetching graph data from database:', error)
+      return null
     }
   }
 }
