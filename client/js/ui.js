@@ -6,6 +6,8 @@ class UIManager {
     constructor() {
         this.loadingOverlay = document.getElementById('loading-overlay')
         this.toastContainer = document.getElementById('toast-container')
+        this.submitTabPanel = document.getElementById('tab-submit')
+        this.visualizeTabPanel = document.getElementById('tab-visualize')
         this.formSection = document.querySelector('.form-section')
         this.successSection = document.getElementById('success-section')
         
@@ -181,6 +183,11 @@ class UIManager {
     showForm() {
         this.successSection.style.display = 'none'
         this.formSection.style.display = 'block'
+        
+        // Ensure we're on the submit tab
+        if (window.tabManager && window.tabManager.getActiveTabId() !== 'submit') {
+            window.tabManager.activateTabById('submit')
+        }
         
         // Focus on first form field
         const firstField = document.getElementById('wallet-address')

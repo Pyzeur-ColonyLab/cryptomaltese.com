@@ -20,6 +20,7 @@ class IncidentReportApp {
     init() {
         this.setupFormValidator()
         this.setupEventListeners()
+        this.initializeTabManager()
         this.performHealthCheck()
         
         console.log('Incident Report App initialized')
@@ -30,6 +31,47 @@ class IncidentReportApp {
      */
     setupFormValidator() {
         this.formValidator = new FormValidator(this.form)
+    }
+
+    /**
+     * Initialize tab manager
+     */
+    initializeTabManager() {
+        if (window.TabManager) {
+            window.tabManager = new TabManager()
+            
+            // Listen to tab change events
+            document.addEventListener('tabchange', (event) => {
+                console.log('Tab changed to:', event.detail.tabId)
+                this.handleTabChange(event.detail.tabId, event.detail.panelId)
+            })
+        } else {
+            console.warn('TabManager not available')
+        }
+    }
+
+    /**
+     * Handle tab change events
+     * @param {string} tabId - ID of the activated tab
+     * @param {string} panelId - ID of the activated panel
+     */
+    handleTabChange(tabId, panelId) {
+        // Handle any tab-specific logic here
+        switch (tabId) {
+            case 'submit':
+                // Ensure form validation is working
+                if (this.formValidator) {
+                    this.formValidator.refresh()
+                }
+                break
+            
+            case 'visualize':
+                // Future: Initialize visualization components
+                break
+            
+            default:
+                console.log('Unknown tab:', tabId)
+        }
     }
 
     /**

@@ -38,8 +38,40 @@
 
         <!-- Main Content -->
         <main id="main-content" class="main">
-            <!-- Incident Report Form -->
-            <section class="form-section">
+            <!-- Tab Navigation -->
+            <nav class="tabs" role="tablist" aria-label="Incident Report Sections">
+                <button 
+                    role="tab" 
+                    aria-selected="true" 
+                    aria-controls="tab-submit" 
+                    id="tab-submit-button" 
+                    class="tab tab-active" 
+                    data-tab="submit"
+                >
+                    Submit Incident
+                </button>
+                <button 
+                    role="tab" 
+                    aria-selected="false" 
+                    aria-controls="tab-visualize" 
+                    id="tab-visualize-button" 
+                    class="tab" 
+                    data-tab="visualize"
+                >
+                    Visualize Incident
+                </button>
+            </nav>
+
+            <!-- Submit Incident Tab -->
+            <section 
+                id="tab-submit" 
+                role="tabpanel" 
+                aria-labelledby="tab-submit-button" 
+                tabindex="0" 
+                class="tab-panel"
+            >
+                <!-- Incident Report Form -->
+                <section class="form-section">
                 <form id="incident-form" class="incident-form" novalidate>
                     <div class="form-group">
                         <label for="wallet-address" class="form-label">
@@ -139,6 +171,21 @@
                     </button>
                 </div>
             </section>
+            </section>
+
+            <!-- Visualize Incident Tab -->
+            <section 
+                id="tab-visualize" 
+                role="tabpanel" 
+                aria-labelledby="tab-visualize-button" 
+                tabindex="0" 
+                class="tab-panel hidden"
+            >
+                <div class="visualize-content">
+                    <h2>Incident Visualization</h2>
+                    <p>Visualization features will be implemented here.</p>
+                </div>
+            </section>
         </main>
 
         <!-- Footer -->
@@ -170,6 +217,7 @@
     <script src="js/validation.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/tabs.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
